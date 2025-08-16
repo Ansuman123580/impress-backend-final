@@ -1,22 +1,30 @@
 import foodModel from "../models/foodModel.js";
-import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 
 // ✅ Add food item
 const addFood = async (req, res) => {
   try {
-    const image_filename = req.file ? req.file.filename : null;
-    if (!image_filename) {
+    if (!req.file) {
       return res.json({ success: false, message: "Image file is required" });
     }
+
+    // Upload image to Cloudinary
+    const cloudUpload = await cloudinary.uploader.upload(req.file.path, {
+      folder: "food_images",
+    });
 
     let packingSizes = [];
     if (req.body.packingSizes) {
       try {
-        packingSizes = typeof req.body.packingSizes === "string"
-          ? JSON.parse(req.body.packingSizes)
-          : req.body.packingSizes;
+        packingSizes =
+          typeof req.body.packingSizes === "string"
+            ? JSON.parse(req.body.packingSizes)
+            : req.body.packingSizes;
       } catch {
-        return res.json({ success: false, message: "Invalid packingSizes JSON" });
+        return res.json({
+          success: false,
+          message: "Invalid packingSizes JSON",
+        });
       }
     }
 
@@ -24,7 +32,7 @@ const addFood = async (req, res) => {
       name: req.body.name,
       description: req.body.description,
       price: Number(req.body.price) || 0,
-      image: image_filename,
+      image: cloudUpload.secure_url, // ✅ Save Cloudinary URL
       category: req.body.category,
       inStock: req.body.inStock !== undefined ? req.body.inStock : true,
       packingSizes: Array.isArray(packingSizes) ? packingSizes : [],
@@ -58,10 +66,12 @@ const removeFood = async (req, res) => {
       return res.json({ success: false, message: "Food not found" });
     }
 
-    // Delete image from uploads folder
-    fs.unlink(`uploads/${food.image}`, (err) => {
-      if (err) console.error("Failed to delete image:", err);
-    });
+    // Delete image from Cloudinary
+    if (food.image) {
+      // Cloudinary public_id nikalna padega
+      const publicId = food.image.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`food_images/${publicId}`);
+    }
 
     await foodModel.findByIdAndDelete(req.body.id);
     res.json({ success: true, message: "Food Removed" });
@@ -80,7 +90,11 @@ const updateStock = async (req, res) => {
       return res.json({ success: false, message: "Invalid stock status" });
     }
 
-    const food = await foodModel.findByIdAndUpdate(id, { inStock }, { new: true });
+    const food = await foodModel.findByIdAndUpdate(
+      id,
+      { inStock },
+      { new: true }
+    );
 
     if (!food) {
       return res.json({ success: false, message: "Food not found" });
