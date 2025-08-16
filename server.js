@@ -8,7 +8,6 @@ import cartRouter from "./routes/cartRoute.js";
 
 // App config
 const app = express();
-const port = process.env.PORT || 4000;
 
 // Middleware
 app.use(express.json());
@@ -32,7 +31,10 @@ app.get("/", (req, res) => {
     res.send("API working ✅");
 });
 
-// Start server
-app.listen(port, () => {
-    console.log(`🚀 Server started on http://localhost:${port}`);
-});
+// ❌ Ye hata do
+// app.listen(port, () => {
+//     console.log(`🚀 Server started on http://localhost:${port}`);
+// });
+
+// ✅ Vercel ke liye export
+export default app;
