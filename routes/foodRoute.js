@@ -1,6 +1,6 @@
 import express from "express";
 import { addFood, listFood, removeFood, updateStock } from "../controllers/foodController.js";
-import upload from "../middlewares/multer.js";
+import upload from "../middleware/multer.js";
 
 const foodRouter = express.Router();
 
